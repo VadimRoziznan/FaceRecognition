@@ -3,8 +3,8 @@ import face_recognition
 import cv2
 import os
 from datetime import datetime
-
-
+import OPi.GPIO as GPIO
+import time
 
 path = 'KnownFaces'
 images = []
@@ -39,6 +39,31 @@ def markAttendance(name):
             dtString = now.strftime("%H:%M:%S")
             f.writelines(f'\n{name}, {dtString}')
 
+
+def activate_output(pin_number, duration=1):
+    # Установка режима нумерации пинов (BOARD или BCM)
+    GPIO.setmode(GPIO.BOARD)
+
+    # Настройка пина как выхода
+    GPIO.setup(pin_number, GPIO.OUT)
+
+    try:
+        # Активация выхода (подача высокого уровня)
+        GPIO.output(pin_number, GPIO.HIGH)
+        print(f"Выход {pin_number} активирован")
+
+        # Ожидание указанной продолжительности
+        time.sleep(duration)
+
+    finally:
+        # Деактивация выхода
+        GPIO.output(pin_number, GPIO.LOW)
+        print(f"Выход {pin_number} деактивирован")
+
+        # Очистка настроек GPIO
+        GPIO.cleanup()
+
+
 encodeListKnown = findEncodings(images)
 print("Декодирование закончено")
 
@@ -60,13 +85,15 @@ while True:
 
         if matches[matchIndex]:
             name = classNames[matchIndex]
-            #print(name)
-            y1, x2, y2, x1 = faceLoc
-            y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
-            cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.rectangle(img, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
-            cv2.putText(img, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
+            print(name)
+            # y1, x2, y2, x1 = faceLoc
+            # y1, x2, y2, x1 = y1 * 3, x2 * 4, y2 * 4, x1 * 4
+            # cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            # cv2.rectangle(img, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
+            # cv2.putText(img, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 0.6, (255, 255, 255), 2)
             markAttendance(name)
+            activate_output(7, 2)
 
-    cv2.imshow("WebCam", img)
-    cv2.waitKey(1)
+    # cv2.imshow("WebCam", img)
+    # cv2.waitKey(1)
+
