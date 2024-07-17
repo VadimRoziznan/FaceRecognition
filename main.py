@@ -42,32 +42,44 @@ def markAttendance(name):
 
 def activate_output(pin_number, duration=1):
     # Установка режима нумерации пинов (BOARD или BCM)
-    GPIO.setmode(GPIO.BOARD)
+    # GPIO.setmode(GPIO.BCM)
 
     # Настройка пина как выхода
-    GPIO.setup(pin_number, GPIO.OUT)
+   # GPIO.setup(pin_number, GPIO.OUT)
+   # print("OK")
 
-    try:
+    #try:
         # Активация выхода (подача высокого уровня)
-        GPIO.output(pin_number, GPIO.HIGH)
-        print(f"Выход {pin_number} активирован")
+     #   GPIO.output(pin_number, GPIO.HIGH)
+      #  print(f"Выход {pin_number} активирован")
 
         # Ожидание указанной продолжительности
-        time.sleep(duration)
+       # time.sleep(duration)
 
-    finally:
+  #  finally:
         # Деактивация выхода
-        GPIO.output(pin_number, GPIO.LOW)
-        print(f"Выход {pin_number} деактивирован")
+   #     GPIO.output(pin_number, GPIO.LOW)
+    #    print(f"Выход {pin_number} деактивирован")
 
         # Очистка настроек GPIO
-        GPIO.cleanup()
+     #   GPIO.cleanup()
+    # Установка режима GPIO пина 3 как выходной
+    os.system("gpio mode 8 out")
+
+    # Задание значения пина 3 в 1
+    os.system("gpio write 8 1")
+    print(f"pin {pin_number} high")
+    time.sleep(duration)
+
+    # Задание значения пина 3 в 0
+    os.system("gpio write 8 0")
+    print(f"pin {pin_number} low")
 
 
 encodeListKnown = findEncodings(images)
 print("Декодирование закончено")
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 while True:
     success, img = cap.read()
@@ -91,8 +103,8 @@ while True:
             # cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
             # cv2.rectangle(img, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
             # cv2.putText(img, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 0.6, (255, 255, 255), 2)
-            markAttendance(name)
-            activate_output(7, 2)
+            # markAttendance(name)
+            activate_output(8, 2)
 
     # cv2.imshow("WebCam", img)
     # cv2.waitKey(1)
