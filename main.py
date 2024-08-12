@@ -5,19 +5,19 @@ import os
 from datetime import datetime
 import OPi.GPIO as GPIO
 import time
+import asyncio
+
 
 path = 'KnownFaces'
 images = []
 classNames = []
 myList = os.listdir(path)
-print(myList)
 
 for cls in myList:
     curImg = cv2.imread(f'{path}/{cls}')
     images.append(curImg)
     classNames.append(os.path.splitext(cls)[0])
 
-print(classNames)
 
 def findEncodings(images):
     encodeList = []
@@ -26,6 +26,7 @@ def findEncodings(images):
         encode = face_recognition.face_encodings(img)[0]
         encodeList.append(encode)
     return encodeList
+
 
 def markAttendance(name):
     with open("Attendance.csv", "r+") as f:
@@ -40,72 +41,64 @@ def markAttendance(name):
             f.writelines(f'\n{name}, {dtString}')
 
 
-def activate_output(pin_number, duration=1):
-    # Установка режима нумерации пинов (BOARD или BCM)
-    # GPIO.setmode(GPIO.BCM)
+def activate_output(pin_number, duration=1, name='ghost'):
 
-    # Настройка пина как выхода
-   # GPIO.setup(pin_number, GPIO.OUT)
-   # print("OK")
+    print(name)
 
-    #try:
-        # Активация выхода (подача высокого уровня)
-     #   GPIO.output(pin_number, GPIO.HIGH)
-      #  print(f"Выход {pin_number} активирован")
+    os.system(f"gpio mode {pin_number} out")
 
-        # Ожидание указанной продолжительности
-       # time.sleep(duration)
-
-  #  finally:
-        # Деактивация выхода
-   #     GPIO.output(pin_number, GPIO.LOW)
-    #    print(f"Выход {pin_number} деактивирован")
-
-        # Очистка настроек GPIO
-     #   GPIO.cleanup()
-    # Установка режима GPIO пина 3 как выходной
-    os.system("gpio mode 8 out")
-
-    # Задание значения пина 3 в 1
-    os.system("gpio write 8 1")
+    os.system(f"gpio write {pin_number} 0")
     print(f"pin {pin_number} high")
     time.sleep(duration)
 
-    # Задание значения пина 3 в 0
-    os.system("gpio write 8 0")
+    os.system(f"gpio write {pin_number} 1")
     print(f"pin {pin_number} low")
 
 
 encodeListKnown = findEncodings(images)
 print("Декодирование закончено")
-
 cap = cv2.VideoCapture(1)
 
-while True:
-    success, img = cap.read()
-    imgS = cv2.resize(img, (0, 0), None, 0.25, 0.25)
-    imgS = cv2.cvtColor(imgS, cv2.COLOR_BGR2RGB)
+def main(cap, encodeListKnown):
 
-    facesCurFrame = face_recognition.face_locations(imgS)
-    encodeCurFrame = face_recognition.face_encodings(imgS, facesCurFrame)
+    while True:
 
-    for encodeFace, faceLoc in zip(encodeCurFrame, facesCurFrame):
-        matches = face_recognition.compare_faces(encodeListKnown, encodeFace)
-        faceDis = face_recognition.face_distance(encodeListKnown, encodeFace)
-        #print(faceDis)
-        matchIndex = np.argmin(faceDis)
+        face_detected = False
 
-        if matches[matchIndex]:
-            name = classNames[matchIndex]
-            print(name)
-            # y1, x2, y2, x1 = faceLoc
-            # y1, x2, y2, x1 = y1 * 3, x2 * 4, y2 * 4, x1 * 4
-            # cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            # cv2.rectangle(img, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
-            # cv2.putText(img, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 0.6, (255, 255, 255), 2)
-            # markAttendance(name)
-            activate_output(8, 2)
+        success, img = cap.read()
+        imgS = cv2.resize(img, (0, 0), None, 0.25, 0.25)
+        imgS = cv2.cvtColor(imgS, cv2.COLOR_BGR2RGB)
 
-    # cv2.imshow("WebCam", img)
-    # cv2.waitKey(1)
+        facesCurFrame = face_recognition.face_locations(imgS)
+        encodeCurFrame = face_recognition.face_encodings(imgS, facesCurFrame)
+
+        if facesCurFrame:
+            face_detected = True
+        else:
+            face_detected = False
+
+        if face_detected:
+            for encodeFace, faceLoc in zip(encodeCurFrame, facesCurFrame):
+                matches = face_recognition.compare_faces(encodeListKnown, encodeFace)
+                faceDis = face_recognition.face_distance(encodeListKnown, encodeFace)
+                matchIndex = np.argmin(faceDis)
+
+                if matches[matchIndex]:
+                    name = classNames[matchIndex]
+                    activate_output(8, 5, name)
+                    time.sleep(2)
+                    cap.release()
+                    cv2.destroyAllWindows()
+                    cap = cv2.VideoCapture(1)
+                    break
+
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+main(cap, encodeListKnown)
 
