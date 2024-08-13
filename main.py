@@ -57,7 +57,7 @@ def activate_output(pin_number, duration=1, name='ghost'):
 
 encodeListKnown = findEncodings(images)
 print("Декодирование закончено")
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 
 def main(cap, encodeListKnown):
 
