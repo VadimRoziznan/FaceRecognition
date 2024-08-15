@@ -41,23 +41,29 @@ def markAttendance(name):
             f.writelines(f'\n{name}, {dtString}')
 
 
-def activate_output(pin_number, duration=1, name='ghost'):
-
-    print(name)
-
+def activate_output(pin_number, duration=1):
     os.system(f"gpio mode {pin_number} out")
 
     os.system(f"gpio write {pin_number} 0")
-    print(f"pin {pin_number} high")
     time.sleep(duration)
 
     os.system(f"gpio write {pin_number} 1")
-    print(f"pin {pin_number} low")
 
+
+def connection_to_camera(diapason):
+    connection = False
+    while not connection:
+        for el in range(diapason):
+            connection = cv2.VideoCapture(el)
+            if connection.isOpened():
+                break
+        else:
+            connection = False
+
+    return connection
 
 encodeListKnown = findEncodings(images)
-print("Декодирование закончено")
-cap = cv2.VideoCapture(1)
+cap = connection_to_camera(5)
 
 def main(cap, encodeListKnown):
 
@@ -85,11 +91,11 @@ def main(cap, encodeListKnown):
 
                 if matches[matchIndex]:
                     name = classNames[matchIndex]
-                    activate_output(8, 5, name)
+                    activate_output(8, 5)
                     time.sleep(2)
                     cap.release()
                     cv2.destroyAllWindows()
-                    cap = cv2.VideoCapture(1)
+                    cap = connection_to_camera(5)
                     break
 
         key = cv2.waitKey(1) & 0xFF
