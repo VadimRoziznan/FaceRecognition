@@ -1,3 +1,4 @@
+import subprocess
 import numpy as np
 import face_recognition
 import cv2
@@ -20,12 +21,12 @@ for cls in myList:
 
 
 def findEncodings(images):
-    encodeList = []
-    for img in images:
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        encode = face_recognition.face_encodings(img)[0]
-        encodeList.append(encode)
-    return encodeList
+   encodeList = []
+   for img in images:
+       img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+       encode = face_recognition.face_encodings(img)[0]
+       encodeList.append(encode)
+   return encodeList
 
 
 def markAttendance(name):
@@ -50,20 +51,25 @@ def activate_output(pin_number, duration=1):
     os.system(f"gpio write {pin_number} 1")
 
 
+def reboot_device():
+    subprocess.run(["sudo", "-S", "shutdown", "-r", "now"], input="password\n".encode())
+
+
 def connection_to_camera(diapason):
     connection = False
-    while not connection:
-        for el in range(diapason):
-            connection = cv2.VideoCapture(el)
-            if connection.isOpened():
-                break
-        else:
-            connection = False
+    for el in range(4, diapason):
+        connection = cv2.VideoCapture(el)
+        if connection.isOpened():
+            break
+    else:
+        reboot_device()
 
     return connection
 
+
 encodeListKnown = findEncodings(images)
 cap = connection_to_camera(5)
+
 
 def main(cap, encodeListKnown):
 
