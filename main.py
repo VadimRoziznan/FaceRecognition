@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 import OPi.GPIO as GPIO
 import time
-import asyncio
+
 
 
 path = 'KnownFaces'
@@ -52,18 +52,22 @@ def activate_output(pin_number, duration=1):
 
 
 def reboot_device():
-    subprocess.run(["sudo", "-S", "shutdown", "-r", "now"], input="password\n".encode())
+    subprocess.run(["sudo", "-S", "shutdown", "-r", "now"], input="Hn48/FaLB67x\n".encode())
 
 
 def connection_to_camera(diapason):
     connection = False
-    for el in range(4, diapason):
-        connection = cv2.VideoCapture(el)
-        if connection.isOpened():
-            break
+    for el in range(diapason):
+        try:
+            connection = cv2.VideoCapture(el)
+            if connection.isOpened():
+                print("Камера найдена.")
+                break
+        except Exception as e:
+            print(f"Ошибка подключения к камере {el}: {str(e)}")
     else:
+        time.sleep(120)
         reboot_device()
-
     return connection
 
 
@@ -72,10 +76,9 @@ cap = connection_to_camera(5)
 
 
 def main(cap, encodeListKnown):
+    print("status OK")
 
     while True:
-
-        face_detected = False
 
         success, img = cap.read()
         imgS = cv2.resize(img, (0, 0), None, 0.25, 0.25)
@@ -85,19 +88,14 @@ def main(cap, encodeListKnown):
         encodeCurFrame = face_recognition.face_encodings(imgS, facesCurFrame)
 
         if facesCurFrame:
-            face_detected = True
-        else:
-            face_detected = False
-
-        if face_detected:
             for encodeFace, faceLoc in zip(encodeCurFrame, facesCurFrame):
                 matches = face_recognition.compare_faces(encodeListKnown, encodeFace)
                 faceDis = face_recognition.face_distance(encodeListKnown, encodeFace)
                 matchIndex = np.argmin(faceDis)
 
                 if matches[matchIndex]:
-                    name = classNames[matchIndex]
                     activate_output(8, 5)
+                    name = classNames[matchIndex]
                     time.sleep(2)
                     cap.release()
                     cv2.destroyAllWindows()
@@ -110,7 +108,6 @@ def main(cap, encodeListKnown):
 
     cap.release()
     cv2.destroyAllWindows()
-
 
 main(cap, encodeListKnown)
 
